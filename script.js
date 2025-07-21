@@ -199,55 +199,84 @@ const malla = [
     ]
   }
 ];
-// --- UTILIDADES -------------------------------------------------
-const aprobados = new Set(JSON.parse(localStorage.getItem("aprobados") || "[]"));
-function totalCreditos() {
-  return ramos.reduce((acc, r) => (aprobados.has(r.nombre) ? acc + r.creditos : acc), 0);
-}
-function cumpleRequisitos(r) {
-  const byRamos = (r.requiere || []).every((req) => aprobados.has(req));
-  const byCreds = r.requiereCreditos ? totalCreditos() >= r.requiereCreditos : true;
-  return byRamos && byCreds;
-}
+// ----------- LÓGICA DE INTERACTIVIDAD Y GUARDADO -----------
 
-// --- CONSTRUCCIÓN DINÁMICA DE LA GRILLA -------------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";                       // limpia contenedor
-  
-  // Agrupa por semestre
-  for (let s = 1; s <= 10; s++) {
-    const lista = ramos.filter((r) => r.semestre === s);
-    if (!lista.length) continue;
-    
-    const { year } = lista[0];               // todos comparten año
-    const box = document.createElement("div");
-    box.className = `semestre year-${year}`;
-    box.innerHTML = `<h2>Semestre ${s}</h2>`;
-    
-    lista.forEach((r) => {
-      const div = document.createElement("div");
-      div.className = "ramo";
-      if (aprobados.has(r.nombre)) div.classList.add("aprobado");
-      
+let creditosAcumulados = 0;
+const aprobados = new Set(JSON.parse(localStorage.getItem("ramosAprobados") || "[]"));
+const contenedor = document.getElementById("contenedor");
+
+malla.forEach((s) => {
+  const sec = document.createElement("section");
+  sec.className = `semestre year-${s.year}`;
+  const h2 = document.createElement("h2");
+  h2.textContent = `Semestre ${s.semestre}`;
+  h2.onclick = () => {
+    sec.classList.toggle("expanded");
+    sec.classList.toggle("collapsed");
+  };
+
+  const ul = document.createElement("ul");
+  ul.className = "ramos";
+  let creditosSemestre = 0;
+
+  s.ramos.forEach((ramo) => {
+    const li = document.createElement("li");
+    const requisitos = ramo.requiere || [];
+    const cumpleReq = requisitos.every((req) => aprobados.has(req));
+    const cumpleCred = ramo.requiereCreditos ? creditosAcumulados >= ramo.requiereCreditos : true;
+    const habilitado = cumpleReq && cumpleCred;
+    const aprobado = aprobados.has(ramo.nombre);
+
+    li.className = habilitado ? "" : "inhabilitado";
+    if (aprobado) li.classList.add("aprobado");
+
+    li.innerHTML = `
+      <div>
+        <strong>${ramo.nombre}</strong> <span class="creditos">(${ramo.creditos} créditos)</span>
+        ${
+          requisitos.length || ramo.requiereCreditos
+            ? `<br><small>Prerrequisitos: ${requisitos.join(", ")}${
+                ramo.requiereCreditos ? ", " + ramo.requiereCreditos + " créditos aprobados" : ""
+              }</small>`
+            : ""
+        }
+      </div>
+    `;
+
+    if (habilitado) {
       const btn = document.createElement("button");
-      btn.textContent = aprobados.has(r.nombre) ? "✓" : "Aprobar";
+      btn.textContent = aprobado ? "✓ Aprobado" : "Marcar como aprobado";
       btn.onclick = () => {
-        if (!cumpleRequisitos(r)) return;     // aún no habilitado
-        aprobados.has(r.nombre) ? aprobados.delete(r.nombre) : aprobados.add(r.nombre);
-        localStorage.setItem("aprobados", JSON.stringify([...aprobados]));
-        location.reload();
+        if (!aprobados.has(ramo.nombre)) {
+          aprobados.add(ramo.nombre);
+          localStorage.setItem("ramosAprobados", JSON.stringify([...aprobados]));
+          location.reload();
+        }
       };
-      
-      // Deshabilita si no cumple requisitos
-      if (!cumpleRequisitos(r)) {
-        btn.disabled = true;
-        div.style.opacity = 0.5;
-      }
-      
-      div.append(r.nombre + " ", btn);
-      box.appendChild(div);
-    });
-    grid.appendChild(box);
-  }
+      li.appendChild(btn);
+    }
+
+    if (habilitado && aprobado) {
+      creditosSemestre += ramo.creditos;
+    }
+
+    ul.appendChild(li);
+  });
+
+  creditosAcumulados += creditosSemestre;
+
+  const pCreditos = document.createElement("p");
+  pCreditos.className = "acumulados";
+  pCreditos.textContent = `Créditos acumulados hasta este semestre: ${creditosAcumulados}`;
+
+  sec.appendChild(h2);
+  sec.appendChild(pCreditos);
+  sec.appendChild(ul);
+  contenedor.appendChild(sec);
 });
+function resetearProgreso() {
+  if (confirm("¿Estás seguro/a de que quieres borrar todos los ramos marcados como aprobados?")) {
+    localStorage.removeItem("ramosAprobados");
+    location.reload();
+  }
+}
