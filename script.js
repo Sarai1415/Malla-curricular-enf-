@@ -275,3 +275,9 @@ malla.forEach((s) => {
   sec.appendChild(ul);
   contenedor.appendChild(sec);
 });
+function resetearProgreso() {
+  if (confirm("¿Estás seguro/a de que quieres borrar todos los ramos marcados como aprobados?")) {
+    localStorage.removeItem("ramosAprobados");
+    location.reload();
+  }
+}
