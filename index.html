@@ -1,38 +1,163 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Malla Curricular</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Malla Curricular de Enfermería</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f7f7f7; }
+    header { background: #004080; color: white; padding: 1rem; text-align: center; }
+    main { padding: 1rem; }
+    section.semestre { background: white; margin: 1rem 0; border-left: 5px solid #004080; border-radius: 5px; padding: 1rem; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .semestre h2 { margin-top: 0; cursor: pointer; }
+    ul.ramos { list-style: none; padding-left: 0; display: none; }
+    ul.ramos li { margin: 0.5rem 0; padding: 0.5rem; border-left: 4px solid #008000; background: #eafbe7; border-radius: 4px; }
+    li.inhabilitado { border-left-color: #aaa; background: #f0f0f0; color: #888; }
+    small { display: block; font-size: 0.85rem; color: #444; }
+    .creditos { font-weight: bold; }
+    .acumulados { font-style: italic; font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+    /* Colores por año */
+    .year-1 { border-left-color: #2980b9; }
+    .year-2 { border-left-color: #27ae60; }
+    .year-3 { border-left-color: #f39c12; }
+    .year-4 { border-left-color: #8e44ad; }
+    .year-5 { border-left-color: #c0392b; }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Malla Curricular - Ejemplo</h1>
-    <p>Explora los ramos por semestre</p>
+    <h1>Malla Curricular - Enfermería</h1>
+    <p>Visualización interactiva por semestres con créditos y prerrequisitos</p>
   </header>
+  <main id="contenedor"></main>
 
-  <main>
-    <section class="semestre">
-      <h2>1° Semestre</h2>
-      <ul>
-        <li><a href="#">Matemática I</a></li>
-        <li><a href="#">Comunicación Oral</a></li>
-        <li><a href="#">Ética Profesional</a></li>
-      </ul>
-    </section>
+  <script>
+    const malla = [
+      // Año 1
+      { semestre: 1, year: 1, ramos: [
+        { nombre: "Química", creditos: 5 },
+        { nombre: "Biología", creditos: 5 },
+        { nombre: "Bases Teóricas de Enfermería I", creditos: 5 },
+        { nombre: "Primeros Auxilios", creditos: 3 },
+        { nombre: "Psicología Evolutiva", creditos: 5 },
+        { nombre: "Inglés I", creditos: 5 }
+      ]},
+      { semestre: 2, year: 1, ramos: [
+        { nombre: "Bioquímica", creditos: 5, requiere: ["Química"] },
+        { nombre: "Morfofunción I", creditos: 8, requiere: ["Biología"] },
+        { nombre: "Bases Teóricas de Enfermería II", creditos: 5, requiere: ["Bases Teóricas de Enfermería I"] },
+        { nombre: "Comunicación y educación en salud", creditos: 3, requiere: ["Bases Teóricas de Enfermería I"] },
+        { nombre: "Inglés II", creditos: 5, requiere: ["Inglés I"] },
+        { nombre: "CFG", creditos: 5 }
+      ]},
+      // Año 2
+      { semestre: 3, year: 2, ramos: [
+        { nombre: "Microbiología Integrada", creditos: 6, requiere: ["Bioquímica"] },
+        { nombre: "Morfofunción II", creditos: 8, requiere: ["Morfofunción I"] },
+        { nombre: "Cuidados de Enfermería I", creditos: 9, requiere: ["Morfofunción I", "Bases Teóricas de Enfermería II", "Comunicación y educación en salud"] },
+        { nombre: "Competencias genéricas para el desarrollo profesional", creditos: 3, requiereCreditos: 55 },
+        { nombre: "Inglés III", creditos: 5, requiere: ["Inglés II"] }
+      ]},
+      { semestre: 4, year: 2, ramos: [
+        { nombre: "Farmacología", creditos: 6, requiere: ["Microbiología Integrada"] },
+        { nombre: "Fisiopatología", creditos: 6, requiere: ["Morfofunción II"] },
+        { nombre: "Cuidados de Enfermería II", creditos: 11, requiere: ["Morfofunción II", "Cuidados de Enfermería I"] },
+        { nombre: "Enfermería en Salud mental", creditos: 5, requiereCreditos: 70 },
+        { nombre: "Bioestadística", creditos: 3, requiereCreditos: 70 }
+      ]},
+      // Año 3
+      { semestre: 5, year: 3, ramos: [
+        { nombre: "Gestión del cuidado de la persona adulta en el área hospitalaria", creditos: 12, requiere: ["Farmacología", "Fisiopatología", "Cuidados de Enfermería II"] },
+        { nombre: "Enfermería en Psiquiatría", creditos: 6, requiere: ["Farmacología", "Fisiopatología", "Cuidados de Enfermería II"] },
+        { nombre: "Bioética y Logística en Enfermería", creditos: 5, requiere: ["Cuidados de Enfermería II"] },
+        { nombre: "Salud Pública", creditos: 3, requiere: ["Cuidados de Enfermería II", "Bioestadística"] },
+        { nombre: "CFG", creditos: 5 }
+      ]},
+      { semestre: 6, year: 3, ramos: [
+        { nombre: "Gestión del Cuidado en la Comunidad I", creditos: 12, requiere: ["Gestión del cuidado de la persona adulta en el área hospitalaria", "Salud Pública"] },
+        { nombre: "Enfermería del Adulto Mayor y Psicogeriatría", creditos: 6, requiere: ["Gestión del cuidado de la persona adulta en el área hospitalaria", "Enfermería en Psiquiatría"] },
+        { nombre: "Enfermería basada en Evidencia", creditos: 3, requiere: ["Bioética y Logística en Enfermería", "Salud Pública"] },
+        { nombre: "Gestión y Liderazgo en Enfermería", creditos: 4, requiere: ["Gestión del cuidado de la persona adulta en el área hospitalaria"] },
+        { nombre: "CFG", creditos: 5 }
+      ]},
+      // Año 4
+      { semestre: 7, year: 4, ramos: [
+        { nombre: "Gestión del Cuidado en la Comunidad II", creditos: 12, requiere: ["Gestión del Cuidado en la Comunidad I"] },
+        { nombre: "Calidad, seguridad y gestión de proyectos en Enfermería", creditos: 6, requiere: ["Gestión y Liderazgo en Enfermería"] },
+        { nombre: "Metodología de la Investigación I", creditos: 5, requiere: ["Enfermería basada en Evidencia"] },
+        { nombre: "Optativo", creditos: 3, requiereCreditos: 150 },
+        { nombre: "CFG", creditos: 5 }
+      ]},
+      { semestre: 8, year: 4, ramos: [
+        { nombre: "Gestión del Cuidado Infanto-juvenil Intrahospitalario", creditos: 12, requiere: ["Gestión del Cuidado en la Comunidad II"] },
+        { nombre: "Cuidado de enfermería a personas en Unidades Críticas y de Urgencias", creditos: 6, requiere: ["Gestión del Cuidado en la Comunidad II"] },
+        { nombre: "Metodología de la Investigación II", creditos: 6, requiere: ["Metodología de la Investigación I"] },
+        { nombre: "Enfermería y medicina integrativa", creditos: 3, requiereCreditos: 150 },
+        { nombre: "Optativo", creditos: 3, requiereCreditos: 150 }
+      ]},
+      // Año 5
+      { semestre: 9, year: 5, ramos: [
+        { nombre: "Internado comunitario", creditos: 25, requiereCreditos: 243 },
+        { nombre: "Internado en Unidades Clínicas y de urgencias", creditos: 10, requiereCreditos: 243 }
+      ]},
+      { semestre: 10, year: 5, ramos: [
+        { nombre: "Internado Intrahospitalario", creditos: 25, requiereCreditos: 243 }
+      ]}
+    ];
 
-    <section class="semestre">
-      <h2>2° Semestre</h2>
-      <ul>
-        <li><a href="#">Física I</a></li>
-        <li><a href="#">Pensamiento Crítico</a></li>
-        <li><a href="#">Programación I</a></li>
-      </ul>
-    </section>
-  </main>
+    let creditosAcumulados = 0;
+    const aprobados = new Set();
+    const contenedor = document.getElementById("contenedor");
 
-  <footer>
-    <p>© 2025 - Malla curricular creada por [Tu Nombre]</p>
-  </footer>
+    malla.forEach(s => {
+      const sec = document.createElement("section");
+      sec.className = `semestre year-${s.year}`;
+      const h2 = document.createElement("h2");
+      h2.textContent = `Semestre ${s.semestre}`;
+      h2.onclick = () => ul.style.display = ul.style.display === "block" ? "none" : "block";
+      const ul = document.createElement("ul");
+      ul.className = "ramos";
+
+      let creditosSemestre = 0;
+
+      s.ramos.forEach(ramo => {
+        const li = document.createElement("li");
+        const requisitos = ramo.requiere || [];
+        const cumpleReq = requisitos.every(req => aprobados.has(req));
+        const cumpleCred = ramo.requiereCreditos ? creditosAcumulados >= ramo.requiereCreditos : true;
+
+        const habilitado = cumpleReq && cumpleCred;
+        li.className = habilitado ? "" : "inhabilitado";
+
+        li.innerHTML = `<strong>${ramo.nombre}</strong> <span class="creditos">(${ramo.creditos} créditos)</span>`;
+
+        if (requisitos.length || ramo.requiereCreditos) {
+          li.innerHTML += `<br><small>Prerrequisitos: ` +
+            requisitos.join(", ") +
+            (ramo.requiereCreditos ? `, ${ramo.requiereCreditos} créditos aprobados` : "") +
+            `</small>`;
+        }
+
+        if (habilitado) {
+          aprobados.add(ramo.nombre);
+          creditosSemestre += ramo.creditos;
+        }
+
+        ul.appendChild(li);
+      });
+
+      creditosAcumulados += creditosSemestre;
+
+      const pCreditos = document.createElement("p");
+      pCreditos.className = "acumulados";
+      pCreditos.textContent = `Créditos acumulados hasta este semestre: ${creditosAcumulados}`;
+
+      sec.appendChild(h2);
+      sec.appendChild(pCreditos);
+      sec.appendChild(ul);
+      contenedor.appendChild(sec);
+    });
+  </script>
 </body>
 </html>
