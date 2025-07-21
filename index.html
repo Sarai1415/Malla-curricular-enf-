@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malla Curricular de Enfermería</title>
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/9011/9011755.png">
+ <link rel="stylesheet" href="style.css">
   <style>
     body { font-family: Arial, sans-serif; margin: 0; background: #f7f7f7; }
     header { background: #004080; color: white; padding: 1rem; text-align: center; }
@@ -136,29 +136,46 @@
       ul.className = "ramos";
       let creditosSemestre = 0;
 
-      s.ramos.forEach(ramo => {
-        const li = document.createElement("li");
-        const requisitos = ramo.requiere || [];
-        const cumpleReq = requisitos.every(req => aprobados.has(req));
-        const cumpleCred = ramo.requiereCreditos ? creditosAcumulados >= ramo.requiereCreditos : true;
-        const habilitado = cumpleReq && cumpleCred;
+ s.ramos.forEach(ramo => {
+  const li = document.createElement("li");
+  const requisitos = ramo.requiere || [];
+  const cumpleReq = requisitos.every(req => aprobados.has(req));
+  const cumpleCred = ramo.requiereCreditos ? creditosAcumulados >= ramo.requiereCreditos : true;
+  const habilitado = cumpleReq && cumpleCred;
+  const aprobado = aprobados.has(ramo.nombre);
 
-        li.className = habilitado ? "" : "inhabilitado";
-        li.innerHTML = `<strong>${ramo.nombre}</strong> <span class="creditos">(${ramo.creditos} créditos)</span>`;
+  li.className = habilitado ? "" : "inhabilitado";
+  if (aprobado) li.classList.add("aprobado");
 
-        if (requisitos.length || ramo.requiereCreditos) {
-          li.innerHTML += `<br><small>Prerrequisitos: ` +
-            requisitos.join(", ") +
-            (ramo.requiereCreditos ? `, ${ramo.requiereCreditos} créditos aprobados` : "") +
-            `</small>`;
-        }
+  li.innerHTML = `
+    <div>
+      <strong>${ramo.nombre}</strong> <span class="creditos">(${ramo.creditos} créditos)</span>
+      ${requisitos.length || ramo.requiereCreditos ? `<br><small>Prerrequisitos: ${requisitos.join(", ")}${ramo.requiereCreditos ? ", " + ramo.requiereCreditos + " créditos aprobados" : ""}</small>` : ""}
+    </div>
+  `;
 
-        if (habilitado) {
-          aprobados.add(ramo.nombre);
-          creditosSemestre += ramo.creditos;
-        }
+  if (habilitado) {
+    const btn = document.createElement("button");
+    btn.textContent = aprobado ? "✓ Aprobado" : "Marcar como aprobado";
+    btn.style.marginLeft = "1rem";
+    btn.style.padding = "0.25rem 0.5rem";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => {
+      if (!aprobados.has(ramo.nombre)) {
+        aprobados.add(ramo.nombre);
+        localStorage.setItem("ramosAprobados", JSON.stringify([...aprobados]));
+        location.reload();
+      }
+    };
+    li.appendChild(btn);
+  }
 
-        ul.appendChild(li);
+  if (habilitado && aprobado) {
+    creditosSemestre += ramo.creditos;
+  }
+
+  ul.appendChild(li);
+});
       });
 
       creditosAcumulados += creditosSemestre;
@@ -175,3 +192,4 @@
   </script>
 </body>
 </html>
+
