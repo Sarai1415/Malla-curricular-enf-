@@ -142,5 +142,3 @@
       sec.appendChild(ul);
       contenedor.appendChild(sec);
     });
-
-mover a raiz 
